@@ -67,7 +67,7 @@ export default function CategoriesSection({ categories }: CategoriesSectionProps
 
             return (
               <Link
-                key={'id' in cat ? cat.id : cat.slug}
+                key={'id' in cat ? cat.id : `${cat.slug}-${idx}`}
                 href={`/providers?category=${cat.slug}`}
                 className="group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-violet-200 hover:shadow-lg hover:shadow-violet-100/50 transition-all duration-300 cursor-pointer overflow-hidden"
               >

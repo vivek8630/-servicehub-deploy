@@ -1,11 +1,10 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider  = "sqlite"
-  url       = env("DATABASE_URL")
-  // For Turso (production), also set TURSO_AUTH_TOKEN
+  provider = "sqlite"
 }
 
 enum Role {

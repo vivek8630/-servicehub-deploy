@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
         ...(minPrice || maxPrice < 999999
           ? { price: { gte: minPrice, lte: maxPrice } }
           : {}),
-        ...(category ? { category: { slug: category } } : {}),
+        ...(category ? { category: { slug: category.toLowerCase() } } : {}),
       },
     },
     ...(minRating > 0 ? { rating: { gte: minRating } } : {}),

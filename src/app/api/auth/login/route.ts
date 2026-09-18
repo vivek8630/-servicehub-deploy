@@ -40,12 +40,16 @@ export async function POST(req: NextRequest) {
         providerProfile: { select: { id: true, isVerified: true, verificationStatus: true } },
       },
     })
+    console.log('[LOGIN DEBUG] Searched for email:', email)
+    console.log('[LOGIN DEBUG] User found:', !!user)
+    if (user) console.log('[LOGIN DEBUG] isActive:', user.isActive)
 
     if (!user || !user.isActive) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash)
+    console.log('[LOGIN DEBUG] Password match:', valid)
     if (!valid) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
     }

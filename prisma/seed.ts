@@ -15,7 +15,21 @@ async function main() {
     { id: '8', name: 'Web & Software', slug: 'web-software', description: 'Web developers, software engineers', icon: 'Code', color: '#0f766e', sortOrder: 8 },
   ]
 
-  // Clear existing
+  // Clear existing (delete dependents first)
+  await prisma.message.deleteMany()
+  await prisma.conversationParticipant.deleteMany()
+  await prisma.conversation.deleteMany()
+  await prisma.payment.deleteMany()
+  await prisma.report.deleteMany()
+  await prisma.earning.deleteMany()
+  await prisma.portfolioItem.deleteMany()
+  await prisma.availability.deleteMany()
+  await prisma.notification.deleteMany()
+  await prisma.session.deleteMany()
+  await prisma.favorite.deleteMany()
+  await prisma.review.deleteMany()
+  await prisma.booking.deleteMany()
+  
   await prisma.service.deleteMany()
   await prisma.customerProfile.deleteMany()
   await prisma.providerProfile.deleteMany()
