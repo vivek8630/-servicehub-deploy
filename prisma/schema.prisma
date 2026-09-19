@@ -48,8 +48,10 @@ model User {
   role         Role     @default(CUSTOMER)
   image        String?
   isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  resetToken       String?  @unique
+  resetTokenExpiry DateTime?
 
   customerProfile CustomerProfile?
   providerProfile ProviderProfile?
@@ -340,4 +342,14 @@ model AdminLog {
   target    String?
   details   String?
   createdAt DateTime @default(now())
+}
+
+model Coupon {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  discount    Float     // percentage discount (e.g., 10 for 10%)
+  isActive    Boolean   @default(true)
+  expiryDate  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

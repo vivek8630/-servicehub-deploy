@@ -206,7 +206,7 @@ export default function HeroSection() {
             className="glass rounded-2xl p-3 shadow-xl max-w-3xl mx-auto mb-8 border border-white/60"
           >
             <div className="flex flex-col sm:flex-row gap-2">
-              <div className="flex-1 relative">
+              <div className="flex-1 relative border-b border-slate-200 sm:border-b-0 sm:border-r border-slate-200">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   id="hero-search-service"
@@ -214,10 +214,10 @@ export default function HeroSection() {
                   placeholder="Search service (e.g. Electrician, Plumbing, Cleaning)"
                   value={service}
                   onChange={(e) => setService(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-transparent rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none text-sm"
+                  className="w-full pl-10 pr-4 py-3 bg-transparent rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none text-slate-900 placeholder:text-slate-400 focus:outline-none text-sm"
                 />
               </div>
-              <div className="sm:border-l border-slate-200 flex-1 relative flex items-center pr-3">
+              <div className="flex-1 relative flex items-center pr-3 mb-2 sm:mb-0">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   id="hero-search-location"
@@ -256,7 +256,7 @@ export default function HeroSection() {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
               {quickCategories.map((cat) => {
                 const IconComponent = cat.icon
                 return (
@@ -323,7 +323,7 @@ export default function HeroSection() {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 my-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 my-2">
               {quickCategories.map((cat) => {
                 const IconComponent = cat.icon
                 return (

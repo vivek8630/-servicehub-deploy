@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
+import * as Accordion from '@radix-ui/react-accordion'
 import { cn } from '@/lib/utils'
 
 const faqs = [
@@ -47,33 +47,6 @@ const faqs = [
   },
 ]
 
-function FAQItem({ question, answer }: { question: string; answer: string }) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div className="border border-slate-200 rounded-2xl overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full p-5 text-left hover:bg-slate-50 transition-colors"
-        aria-expanded={open}
-      >
-        <span className="font-medium text-slate-900 text-sm pr-4">{question}</span>
-        <ChevronDown
-          className={cn(
-            'w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200',
-            open && 'rotate-180'
-          )}
-        />
-      </button>
-      {open && (
-        <div className="px-5 pb-5 border-t border-slate-100 animate-fade-in">
-          <p className="text-sm text-slate-600 leading-relaxed pt-4">{answer}</p>
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function FAQSection() {
   return (
     <section className="py-24 bg-white">
@@ -85,11 +58,23 @@ export default function FAQSection() {
           </p>
         </div>
 
-        <div className="space-y-3">
-          {faqs.map((faq) => (
-            <FAQItem key={faq.question} question={faq.question} answer={faq.answer} />
+        <Accordion.Root type="single" collapsible className="space-y-3">
+          {faqs.map((faq, idx) => (
+            <Accordion.Item key={idx} value={`item-${idx}`} className="border border-slate-200 rounded-2xl overflow-hidden bg-white">
+              <Accordion.Header className="flex">
+                <Accordion.Trigger className="flex items-center justify-between w-full p-5 text-left hover:bg-slate-50 transition-colors group">
+                  <span className="font-medium text-slate-900 text-sm pr-4">{faq.question}</span>
+                  <ChevronDown className="w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </Accordion.Trigger>
+              </Accordion.Header>
+              <Accordion.Content className="overflow-hidden text-sm text-slate-600 transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                <div className="px-5 pb-5 border-t border-slate-100 pt-4 leading-relaxed">
+                  {faq.answer}
+                </div>
+              </Accordion.Content>
+            </Accordion.Item>
           ))}
-        </div>
+        </Accordion.Root>
       </div>
     </section>
   )

@@ -64,28 +64,48 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, { status: 400 })
     }
 
-    const { providerId, serviceId, scheduledDate, scheduledTime, address, city, notes, estimatedPrice } = parsed.data
+    const { providerId, serviceId, scheduledDate, scheduledTime, address, city, notes, estimatedPrice, paymentMethod } = parsed.data
 
     const provider = await prisma.providerProfile.findUnique({ where: { id: providerId } })
     if (!provider) return NextResponse.json({ error: 'Provider not found' }, { status: 404 })
 
-    const booking = await prisma.booking.create({
-      data: {
-        customerProfileId: user.customerProfile.id,
-        providerProfileId: providerId,
-        serviceId: serviceId || null,
-        scheduledDate: new Date(scheduledDate),
-        scheduledTime,
-        address,
-        city: city || null,
-        notes: notes || null,
-        estimatedPrice,
-        status: 'PENDING',
-      },
-      include: {
-        provider: { include: { user: { select: { name: true } } } },
-        service: true,
-      },
+    const isCash = paymentMethod === 'cash'
+    const bookingStatus = isCash ? 'CONFIRMED' : 'PENDING'
+    const paymentStatus = isCash ? 'PENDING' : 'SUCCESS' // Simulation assumes success for online
+
+    const result = await prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.create({
+        data: {
+          customerProfileId: user.customerProfile.id,
+          providerProfileId: providerId,
+          serviceId: serviceId || null,
+          scheduledDate: new Date(scheduledDate),
+          scheduledTime,
+          address,
+          city: city || null,
+          notes: notes || null,
+          estimatedPrice,
+          status: bookingStatus,
+        },
+        include: {
+          provider: { include: { user: { select: { name: true } } } },
+          service: true,
+        },
+      })
+
+      await tx.payment.create({
+        data: {
+          bookingId: booking.id,
+          amount: estimatedPrice,
+          providerAmount: estimatedPrice - 99, // minus platform fee
+          platformFee: 99,
+          status: paymentStatus,
+          paymentMethod: paymentMethod || 'upi',
+          transactionId: `TXN-${Math.floor(Math.random() * 1000000)}`,
+        }
+      })
+
+      return booking
     })
 
     // Create notification for provider
@@ -94,14 +114,14 @@ export async function POST(req: NextRequest) {
         data: {
           userId: provider.userId,
           title: 'New Booking Request',
-          message: `${user.name} has requested a booking for ${booking.service?.name || 'your service'}.`,
+          message: `${user.name} has requested a booking for ${result.service?.name || 'your service'}.`,
           type: 'booking_new',
-          link: `/provider/bookings/${booking.id}`,
+          link: `/provider/bookings/${result.id}`,
         },
       })
     }
 
-    return NextResponse.json({ booking }, { status: 201 })
+    return NextResponse.json({ booking: result }, { status: 201 })
   } catch (error) {
     console.error('Booking error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -51,6 +51,7 @@ export const bookingSchema = z.object({
   city: z.string().min(2).optional(),
   notes: z.string().max(500).optional(),
   estimatedPrice: z.number().min(0),
+  paymentMethod: z.enum(['upi', 'card', 'cash']).optional(),
 })
 
 export const reviewSchema = z.object({

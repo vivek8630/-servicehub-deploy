@@ -37,13 +37,6 @@ const timeSlots = [
   '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM',
 ]
 
-const PROMO_CODES: Record<string, { percent?: number; flat?: number }> = {
-  AC10: { percent: 10 },
-  CLEAN20: { percent: 20 },
-  FIXIT15: { percent: 15 },
-  SHPHOTO: { flat: 500 },
-}
-
 export default function BookingFormWrapper({ providerId, services }: BookingFormWrapperProps) {
   const router = useRouter()
   const [step, setStep] = useState(1)
@@ -61,7 +54,7 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
   const [promoError, setPromoError] = useState('')
 
   // Payment choice
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card'>('upi')
+  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card' | 'cash'>('upi')
   const [cardName, setCardName] = useState('')
   const [cardNumber, setCardNumber] = useState('')
   const [cardExpiry, setCardExpiry] = useState('')
@@ -94,7 +87,7 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
   const grandTotal = Math.max(0, basePrice + gstTax + platformFee - discountAmount)
 
   // Apply Coupon Code
-  const handleApplyPromo = () => {
+  const handleApplyPromo = async () => {
     setPromoError('')
     const code = promoCode.toUpperCase().trim()
     if (!code) {
@@ -102,17 +95,22 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
       return
     }
 
-    const discountInfo = PROMO_CODES[code]
-    if (discountInfo) {
-      let valText = ''
-      if (discountInfo.percent) valText = `${discountInfo.percent}% OFF`
-      if (discountInfo.flat) valText = `₹${discountInfo.flat} OFF`
-
-      setActiveDiscount({ code, value: discountInfo.percent || discountInfo.flat || 0 })
-      setPromoError('')
-    } else {
-      setPromoError('Invalid coupon code. Try AC10 or CLEAN20.')
-      setActiveDiscount(null)
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setActiveDiscount({ code, value: data.discount })
+        setPromoError('')
+      } else {
+        setPromoError(data.error || 'Invalid coupon code.')
+        setActiveDiscount(null)
+      }
+    } catch (e) {
+      setPromoError('Could not validate coupon.')
     }
   }
 
@@ -145,7 +143,7 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
         setError('Please enter your card payment details.')
         return
       }
-    } else {
+    } else if (paymentMethod === 'upi') {
       if (!upiId || !upiId.includes('@')) {
         setError('Please enter a valid UPI ID (e.g., user@upi).')
         return
@@ -156,12 +154,17 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
     setLoading(true)
 
     // Simulate animated secure checkout loaders
-    const messages = [
-      'Establishing secure token connection...',
-      'Authorizing payment gateway...',
-      'Deducting transaction amount securely...',
-      'Registering slot and notifying provider profile...',
-    ]
+    let messages = []
+    if (paymentMethod === 'cash') {
+      messages = ['Processing booking request...', 'Registering slot and notifying provider...']
+    } else {
+      messages = [
+        'Establishing secure token connection...',
+        'Authorizing payment gateway...',
+        'Deducting transaction amount securely...',
+        'Registering slot and notifying provider profile...',
+      ]
+    }
 
     for (let i = 0; i < messages.length; i++) {
       setLoaderMessage(messages[i])
@@ -180,6 +183,7 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
           address,
           notes,
           estimatedPrice: grandTotal,
+          paymentMethod,
         }),
       })
 
@@ -228,8 +232,20 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
             <span className="font-medium text-slate-800">{date} at {time}</span>
           </div>
           <div className="flex justify-between border-t border-slate-100 pt-2 font-bold text-sm">
-            <span className="text-slate-700">Amount Paid:</span>
+            <span className="text-slate-700">Amount:</span>
             <span className="text-violet-600">{formatCurrency(grandTotal)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Payment:</span>
+            <span className="font-semibold text-slate-800">
+              {paymentMethod === 'cash' ? 'Pay Later / Cash' : paymentMethod === 'upi' ? 'UPI' : 'Card'}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Status:</span>
+            <span className={`font-semibold ${paymentMethod === 'cash' ? 'text-amber-500' : 'text-emerald-500'}`}>
+              {paymentMethod === 'cash' ? 'Pending' : 'Paid'}
+            </span>
           </div>
         </div>
 
@@ -442,7 +458,7 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
           </div>
 
           {/* Payment selector tabs */}
-          <div className="grid grid-cols-2 gap-2 border border-slate-100 p-1 rounded-xl bg-slate-50">
+          <div className="grid grid-cols-3 gap-2 border border-slate-100 p-1 rounded-xl bg-slate-50">
             <button
               type="button"
               onClick={() => setPaymentMethod('upi')}
@@ -450,7 +466,7 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
                 paymentMethod === 'upi' ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
-              <QrCode className="w-4 h-4" /> UPI Payment
+              <QrCode className="w-4 h-4" /> UPI
             </button>
             <button
               type="button"
@@ -459,7 +475,16 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
                 paymentMethod === 'card' ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
-              <CreditCard className="w-4 h-4" /> Debit/Credit Card
+              <CreditCard className="w-4 h-4" /> Card
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('cash')}
+              className={`flex items-center justify-center gap-1.5 py-2 text-[11px] font-semibold rounded-lg transition-all ${
+                paymentMethod === 'cash' ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" /> Pay Later
             </button>
           </div>
 
@@ -480,7 +505,7 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
                 A verification notification request will be pushed directly to your UPI mobile app.
               </p>
             </div>
-          ) : (
+          ) : paymentMethod === 'card' ? (
             <div className="space-y-3 pt-1">
               <div>
                 <label className="text-[11px] font-semibold text-slate-500 mb-1 block">Cardholder Name</label>
@@ -526,6 +551,14 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
                     className="w-full text-sm rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-800 bg-white text-center font-mono"
                   />
                 </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3 pt-1">
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-center">
+                <FileText className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                <p className="font-semibold text-amber-800 text-sm mb-1">Payment will be collected after the service.</p>
+                <p className="text-xs text-amber-700">You can pay via cash, UPI, or card directly to the provider once the job is completed.</p>
               </div>
             </div>
           )}
