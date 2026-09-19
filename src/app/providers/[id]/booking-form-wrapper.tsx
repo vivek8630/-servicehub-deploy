@@ -75,15 +75,7 @@ export default function BookingFormWrapper({ providerId, services }: BookingForm
   const gstTax = Math.round(basePrice * 0.18) // 18% GST
   const platformFee = 99 // ₹99 Fixed fee
   
-  let discountAmount = 0
-  if (activeDiscount) {
-    const promo = PROMO_CODES[activeDiscount.code]
-    if (promo?.percent) {
-      discountAmount = Math.round(basePrice * (promo.percent / 100))
-    } else if (promo?.flat) {
-      discountAmount = Math.min(basePrice, promo.flat)
-    }
-  }
+  let discountAmount = activeDiscount?.value || 0
   const grandTotal = Math.max(0, basePrice + gstTax + platformFee - discountAmount)
 
   // Apply Coupon Code

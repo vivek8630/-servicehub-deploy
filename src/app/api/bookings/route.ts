@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     const result = await prisma.$transaction(async (tx) => {
       const booking = await tx.booking.create({
         data: {
-          customerProfileId: user.customerProfile.id,
+          customerProfileId: user.customerProfile!.id,
           providerProfileId: providerId,
           serviceId: serviceId || null,
           scheduledDate: new Date(scheduledDate),

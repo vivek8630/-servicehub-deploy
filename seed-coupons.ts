@@ -27,7 +27,7 @@ async function main() {
         args: [crypto.randomUUID(), c.code, c.discount, 1, new Date().toISOString()]
       });
       console.log(`Added coupon ${c.code}`);
-    } catch (e) {
+    } catch (e: any) {
       console.log(`Coupon ${c.code} already exists or error:`, e.message);
     }
   }
